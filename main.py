@@ -1,118 +1,152 @@
 import re
 import csv
 import random
-import datetime
-import functools
-
 
 def registrar_movimiento(func): ...
 
-
 class Cliente:
-    def __init__(self, nombre: str, apellido: str, dni: int, email: str):
-        self._nombre: str = nombre
-        self._apellido: str = apellido
-        self._dni: int = dni
-        self._email: str = email
-        self._saldo: int = 0
-        self._cbu: int = random.randint(10000, 99999)
-        self._alias: str = self.generar_alias()
+    def __init__(self, nombre: str, apellido: str, dni: int, email: str, saldo: int = 0):
+
+        self._nombre: str
+        self._apellido: str
+        self._dni: int
+        self._email: str
+        self._saldo: int
+        self._alias: str = ""
+        random.seed(dni)
+        self._cbu: int = random.randint(10_000, 99_999)
+
+
+        self.nombre = nombre
+        self.apellido = apellido
+        self.dni = dni
+        self.email = email
+        self.saldo = saldo
 
     @property
-    def nombre(self):
+    def nombre(self) -> str:
         return self._nombre
 
     @nombre.setter
-    def nombre(self, valor):
+    def nombre(self, valor: str):
         if not re.match(r"^[A-Za-z\s]+$", valor):
             raise ValueError("El NOMBRE solo puede contener letras y espacios.")
         self._nombre = valor
 
     @property
-    def apellido(self):
+    def apellido(self) -> str:
         return self._apellido
 
     @apellido.setter
-    def apellido(self, valor):
+    def apellido(self, valor: str):
         if not re.match(r"^[A-Za-z\s]+$", valor):
             raise ValueError("El Apellido solo puede contener letras y espacios.")
         self._apellido = valor
 
     @property
-    def dni(self):
+    def dni(self) -> int:
         return self._dni
 
     @dni.setter
-    def dni(self, valor):
+    def dni(self, valor: int):
         if not (1 <= valor <= 99_999_999):
             raise ValueError("El DNI debe ser un número entre 1 y 99.999.999.")
         self._dni = valor
 
     @property
-    def email(self):
+    def email(self) -> str:
         return self._email
 
     @email.setter
-    def email(self, valor):
+    def email(self, valor: str):
         if not re.match(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$", valor):
             raise ValueError("El formato de email es inválido.")
         self._email = valor
 
     @property
-    def saldo(self):
+    def saldo(self) -> int:
         return self._saldo
 
     @saldo.setter
-    def saldo(self, valor):
+    def saldo(self, valor: int):
+        if valor < 0:
+            raise ValueError("El saldo no puede ser negativo.")
         self._saldo = valor
 
     @property
-    def cbu(self):
+    def cbu(self) -> int:
         return self._cbu
 
     @property
-    def alias(self):
+    def alias(self) -> str:
         return self._alias
+
+    @alias.setter
+    def alias(self, value: str):
+        self._alias = value
 
     # METODOS-------------------------------------------------------------------
 
-    def depositar(self, monto):
+    def depositar(self, monto: int):
         if monto <= 0:
             raise ValueError("Solo se pueden depositar montos positivos.")
         self.saldo += monto
 
-    def retirar(self, monto):
+    def retirar(self, monto: int):
         if monto <= 0:
             raise ValueError("El monto para retirar debe ser mayor que 0.")
         if monto > self.saldo:
             raise ValueError("Saldo insuficiente.")
         self.saldo -= monto
 
-    def transferir(self, monto, destinatario):
+    def transferir(self, monto: int, destinatario: 'Cliente'):
         if not isinstance(destinatario, Cliente):
             raise ValueError("El destinatario debe ser un Cliente.")
         self.retirar(monto)
         destinatario.depositar(monto)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return (
             f"Cliente: {self.apellido} {self.nombre}\n"
             f"DNI: {self.dni}\n"
             f"Email: {self.email}\n"
-            f"Saldo: ${self.saldo}\n"
+            f"Saldo: ${self.saldo:.2f}\n"
             f"CBU: {self.cbu}\n"
             f"Alias: {self.alias}"
         )
 
-    def generar_alias(self):
-        with open("wordlist.txt", "r") as file:
-            palabras = file.read().splitlines()
-        alias = ".".join(random.sample(palabras, 3))
-        self._alias = alias
-        return alias
 
 
-class Banco: ...
+class Banco:
+    def __init__(self):
+        self.clientes:list[Cliente] = []
+
+    def agregar_cliente(self, nombre:str, apellido:str, dni:int, email:str, saldo:int=0)->None:
+        nuevo_cliente = Cliente(nombre, apellido, dni, email)
+        self.clientes.append(nuevo_cliente)
+
+    def buscar_cliente(self, nombre_o_dni: str | int) -> list[Cliente] | None:
+        if isinstance(nombre_o_dni, int):
+            return [cliente for cliente in self.clientes if cliente.dni == nombre_o_dni]
+        elif isinstance(nombre_o_dni, str):
+            return [cliente for cliente in self.clientes if nombre_o_dni.lower() in cliente.nombre.lower() or nombre_o_dni.lower() in cliente.apellido.lower()]
+
+    def asignar_alias(self, dir_wordlist:str, cliente:Cliente)->None:
+        with open(dir_wordlist, mode="r", encoding="utf-8") as archivo:
+            wordlist =[line.strip() for line in archivo]
+            cliente.alias = '.'.join(random.sample(wordlist, 3))
+
+    def generar_resumen(self, cliente:Cliente)->str:
+        resumen:str = str(cliente)
+        #Probablemente se podria revisar en el log los movimientos para mostrar en el resumen, por eso el formato de la funcion
+        return resumen
+
+    def __str__(self)->str:
+        retorno:str = f"Cantidad de clientes: {len(self.clientes)}\n"
+        for cliente in self.clientes:
+            retorno += f"Nº:{self.clientes.index(cliente)}"
+            retorno += f"\t{str(cliente)}"
+        return retorno
 
 
 # Ejemplo de uso
@@ -126,7 +160,7 @@ with open("clientes.csv", "r") as file:
 
 # Asignar alias a todos los clientes
 for cliente in banco.clientes:
-    banco.asignar_alias(cliente)
+    banco.asignar_alias("wordlist.txt", cliente)
 
 # Realizar algunas operaciones
 cliente1 = banco.clientes[0]
