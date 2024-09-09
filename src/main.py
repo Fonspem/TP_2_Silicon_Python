@@ -4,11 +4,7 @@ import random
 import re
 from datetime import datetime
 
-
-# ------------------- Decoradores -------------------
-
 def registrar_movimiento(funcion):
-    """Decorador para registrar movimientos de depósito, retiro y transferencias en un log."""
     @functools.wraps(funcion)
     def wrapper(self, *args, **kwargs):
         try:
@@ -36,27 +32,28 @@ def registrar_movimiento(funcion):
 
             return resultado
         except Exception as e:
-            print(f"Error al realizar {funcion.__name__}: {e}")
-            raise  # Re-lanzamos la excepción para no ocultarla
-
+            print(f"Error al realizar log: {e}")
     return wrapper
 
 
-# ------------------- Clase Cliente -------------------
-
 class Cliente:
     def __init__(self, nombre: str, apellido: str, dni: int, email: str, saldo: int = 0):
-        """Inicialización de un cliente con validaciones."""
-        self._nombre = nombre
-        self._apellido = apellido
-        self._dni = dni
-        self._email = email
-        self._saldo = saldo
-        self._alias = ""
+        self._nombre:str
+        self._apellido:str
+        self._dni:int
+        self._email:str
+        self._saldo:int
+        self._alias:str
+
+        self.nombre = nombre
+        self.apellido = apellido
+        self.dni = dni
+        self.email = email
+        self.saldo = saldo
+        self.alias = ""
         random.seed(dni)
         self._cbu = random.randint(10_000, 99_999)
 
-    # Propiedades con validaciones
     @property
     def nombre(self) -> str:
         return self._nombre
@@ -119,7 +116,7 @@ class Cliente:
     def alias(self, value: str):
         self._alias = value
 
-    # Métodos de operaciones bancarias
+
     @registrar_movimiento
     def depositar(self, monto: int):
         if monto <= 0:
@@ -142,7 +139,6 @@ class Cliente:
         destinatario.depositar(monto)
 
     def __str__(self) -> str:
-        """Representación en formato string del cliente."""
         return (
             f"Cliente: {self.apellido} {self.nombre}\n"
             f"DNI: {self.dni}\n"
@@ -152,16 +148,11 @@ class Cliente:
             f"Alias: {self.alias}"
         )
 
-
-# ------------------- Clase Banco -------------------
-
 class Banco:
     def __init__(self):
-        """Inicialización de un banco con una lista de clientes."""
         self.clientes: list[Cliente] = []
 
     def agregar_cliente(self, nombre: str, apellido: str, dni: int, email: str, saldo: int = 0) -> None:
-        """Agrega un cliente nuevo al banco."""
         try:
             nuevo_cliente = Cliente(nombre, apellido, dni, email, saldo)
             self.clientes.append(nuevo_cliente)
@@ -169,7 +160,6 @@ class Banco:
             print(f"Error al agregar cliente: {e}")
 
     def buscar_cliente(self, nombre_o_dni: str | int) -> list[Cliente] | None:
-        """Busca clientes por nombre parcial o por DNI."""
         try:
             if isinstance(nombre_o_dni, int):
                 return [cliente for cliente in self.clientes if cliente.dni == nombre_o_dni]
@@ -181,7 +171,6 @@ class Banco:
             return []
 
     def asignar_alias(self, dir_wordlist: str, cliente: Cliente) -> None:
-        """Asigna un alias aleatorio a un cliente usando un archivo de lista de palabras."""
         try:
             with open(dir_wordlist, mode="r", encoding="utf-8") as archivo:
                 wordlist = [line.strip() for line in archivo]
@@ -192,7 +181,6 @@ class Banco:
             print(f"Error al asignar alias: {e}")
 
     def generar_resumen(self, cliente: Cliente) -> str:
-        """Genera un resumen de la cuenta del cliente."""
         try:
             return str(cliente)
         except Exception as e:
@@ -200,7 +188,6 @@ class Banco:
             return ""
 
     def __str__(self) -> str:
-        """Genera un resumen de todos los clientes en el banco."""
         try:
             retorno = f"\nCantidad de clientes: {len(self.clientes)}\n"
             for cliente in self.clientes:
@@ -211,56 +198,29 @@ class Banco:
             print(f"Error al generar información del banco: {e}")
             return ""
 
-
-# ------------------- Función principal -------------------
-
 def main():
-    """Función principal que coordina la ejecución del programa."""
+    
     ubicacion_clientes = "clientes.csv"
     ubicacion_palabras_alias = "wordlist.txt"
     banco = Banco()
 
-    # Cargar clientes desde CSV
-    cargar_clientes(banco, ubicacion_clientes)
-
-    # Asignar alias a los clientes
-    asignar_alias_a_clientes(banco, ubicacion_palabras_alias)
-
-    # Realizar operaciones bancarias
-    realizar_operaciones(banco)
-
-    # Mostrar información de clientes y banco
-    mostrar_resumenes(banco)
-
-
-# ------------------- Funciones auxiliares -------------------
-
-def cargar_clientes(banco: Banco, archivo_clientes: str):
-    """Carga los clientes desde un archivo CSV."""
+    #Cargamos los clientes
     try:
-        with open(archivo_clientes, "r", encoding='utf-8') as file:
+        with open(ubicacion_clientes, "r", encoding='utf-8') as file:
             csv_reader = csv.DictReader(file)
             for row in csv_reader:
                 banco.agregar_cliente(row["nombre"], row["apellido"], int(row["dni"]), row["email"])
     except FileNotFoundError:
-        print(f"Archivo '{archivo_clientes}' no encontrado.")
-    except csv.Error as e:
-        print(f"Error al procesar archivo CSV: {e}")
+        print(f"Archivo '{ubicacion_clientes}' no encontrado.")
     except Exception as e:
-        print(f"Error inesperado al cargar clientes: {e}")
+        print(f"Error al cargar clientes: {e}")
 
-
-def asignar_alias_a_clientes(banco: Banco, archivo_alias: str):
-    """Asigna alias a todos los clientes del banco."""
     try:
         for cliente in banco.clientes:
-            banco.asignar_alias(archivo_alias, cliente)
+            banco.asignar_alias(ubicacion_palabras_alias, cliente)
     except Exception as e:
-        print(f"Error inesperado al asignar alias: {e}")
+        print(f"Error al asignar alias: {e}")
 
-
-def realizar_operaciones(banco: Banco):
-    """Realiza algunas operaciones bancarias de prueba."""
     try:
         cliente1 = banco.clientes[0]
         cliente2 = banco.clientes[1]
@@ -269,17 +229,15 @@ def realizar_operaciones(banco: Banco):
         cliente1.transferir(500, cliente2)
         cliente2.retirar(200)
     except IndexError:
+        #si no se encuentra el archivo de clientes o son muy pocos
         print("Error: no hay suficientes clientes para realizar las transacciones.")
     except Exception as e:
         print(f"Error en las transacciones: {e}")
 
-
-def mostrar_resumenes(banco: Banco):
-    """Muestra los resúmenes de las cuentas y la información general del banco."""
     try:
         cliente1 = banco.clientes[0]
 
-        resultados = banco.buscar_cliente("ju")
+        resultados = banco.buscar_cliente("ez")
         if resultados:
             print("---- Comienzo de la búsqueda ----")
             for cliente in resultados:
@@ -288,8 +246,18 @@ def mostrar_resumenes(banco: Banco):
         else:
             print("No se encontraron coincidencias.")
 
+        input("Enter para continuar")
+
+        print("/nResumen de la cuenta:")
         print(banco.generar_resumen(cliente1))
+
+        input("Enter para continuar")
+
+        print("/nPrint del banco:")
         print(banco)
     except Exception as e:
         print(f"Error al mostrar resúmenes: {e}")
 
+
+if __name__ == "__main__":
+    main()
