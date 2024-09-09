@@ -1,7 +1,7 @@
-import functools
-import re
 import csv
+import functools
 import random
+import re
 from datetime import datetime
 
 
@@ -22,8 +22,7 @@ def registrar_movimiento(funcion):
             accion = 'Transferencia'
             monto = args[0]
         else:
-            accion = 'Desconocida'
-            monto = 'Desconocido'
+            accion = monto ='Desconocida'
 
         mensaje = (f"{datetime.now():%d/%m/%Y %H:%M} - {nombre_cliente} ({cbu_cliente}) "
                    f"[{accion}] ${monto:.2f}")
@@ -36,6 +35,7 @@ def registrar_movimiento(funcion):
 
     return wrapper
 
+
 class Cliente:
     def __init__(self, nombre: str, apellido: str, dni: int, email: str, saldo: int = 0):
 
@@ -47,7 +47,6 @@ class Cliente:
         self._alias: str = ""
         random.seed(dni)
         self._cbu: int = random.randint(10_000, 99_999)
-
 
         self.nombre = nombre
         self.apellido = apellido
@@ -151,12 +150,11 @@ class Cliente:
         )
 
 
-
 class Banco:
     def __init__(self):
-        self.clientes:list[Cliente] = []
+        self.clientes: list[Cliente] = []
 
-    def agregar_cliente(self, nombre:str, apellido:str, dni:int, email:str, saldo:int=0)->None:
+    def agregar_cliente(self, nombre: str, apellido: str, dni: int, email: str, saldo: int = 0) -> None:
         nuevo_cliente = Cliente(nombre, apellido, dni, email)
         self.clientes.append(nuevo_cliente)
 
@@ -164,57 +162,64 @@ class Banco:
         if isinstance(nombre_o_dni, int):
             return [cliente for cliente in self.clientes if cliente.dni == nombre_o_dni]
         elif isinstance(nombre_o_dni, str):
-            return [cliente for cliente in self.clientes if nombre_o_dni.lower() in cliente.nombre.lower() or nombre_o_dni.lower() in cliente.apellido.lower()]
+            return [cliente for cliente in self.clientes if (
+                    nombre_o_dni.lower() in cliente.nombre.lower() or nombre_o_dni.lower() in cliente.apellido.lower())]
 
-    def asignar_alias(self, dir_wordlist:str, cliente:Cliente)->None:
+    def asignar_alias(self, dir_wordlist: str, cliente: Cliente) -> None:
         with open(dir_wordlist, mode="r", encoding="utf-8") as archivo:
-            wordlist =[line.strip() for line in archivo]
+            wordlist = [line.strip() for line in archivo]
             cliente.alias = '.'.join(random.sample(wordlist, 3))
 
-    def generar_resumen(self, cliente:Cliente)->str:
-        resumen:str = str(cliente)
-        #Probablemente se podria revisar en el log los movimientos para mostrar en el resumen, por eso el formato de la funcion
+    def generar_resumen(self, cliente: Cliente) -> str:
+        resumen: str = str(cliente)
+        # Probablemente se podria revisar en el log los movimientos para mostrar en el resumen, por eso el formato de la funcion
         return resumen
 
-    def __str__(self)->str:
-        retorno:str = f"\nCantidad de clientes: {len(self.clientes)}\n"
+    def __str__(self) -> str:
+        retorno: str = f"\nCantidad de clientes: {len(self.clientes)}\n"
         for cliente in self.clientes:
             retorno += f"\tNº:{self.clientes.index(cliente)}\n"
             retorno += f"{str(cliente)}\n"
         return retorno
 
+def __main__():
+    # Ejemplo de uso
+    ubicacion_clientes:str = "clientes.csv"
+    ubicacion_palabras_alias:str = "wordlist.txt"
 
-# Ejemplo de uso
-banco = Banco()
+    banco = Banco()
 
-# Cargar clientes desde CSV
-with open("clientes.csv", "r", encoding='utf-8') as file:
-    csv_reader = csv.DictReader(file)
-    for row in csv_reader:
-        try:
-            banco.agregar_cliente(row["nombre"], row["apellido"], int(row["dni"]), row["email"])
-        except ValueError as e:
-            print(e)
-# Asignar alias a todos los clientes
-for cliente in banco.clientes:
-    banco.asignar_alias("wordlist.txt", cliente)
+    # Cargar clientes desde CSV
+    with open(ubicacion_clientes, "r", encoding='utf-8') as file:
+        csv_reader = csv.DictReader(file)
+        for row in csv_reader:
+            try:
+                banco.agregar_cliente(row["nombre"], row["apellido"], int(row["dni"]), row["email"])
+            except ValueError as e:
+                print(e)
 
-# Realizar algunas operaciones
-cliente1 = banco.clientes[0]
-cliente2 = banco.clientes[1]
+    # Asignar alias a todos los clientes
+    for cliente in banco.clientes:
+        banco.asignar_alias(ubicacion_palabras_alias, cliente)
 
-cliente1.depositar(1000)
-cliente1.transferir(500, cliente2)
-cliente2.retirar(200)
+    # Realizar algunas operaciones
+    cliente1 = banco.clientes[0]
+    cliente2 = banco.clientes[1]
 
-# Buscar cliente por determinado patrón parcial en nombre completo o DNI
-# En este caso, buscamos clientes que tengan 'ez' en su nombre completo
-resultados = banco.buscar_cliente("ez")
-for cliente in resultados:
-    print(cliente)
+    cliente1.depositar(1000)
+    cliente1.transferir(500, cliente2)
+    cliente2.retirar(200)
 
-# Generar resumen
-print(banco.generar_resumen(cliente1))
+    # Buscar cliente por determinado patrón parcial en nombre completo o DNI
+    # En este caso, buscamos clientes que tengan 'ez' en su nombre completo
 
-# Mostrar información del banco
-print(banco)
+    resultados = banco.buscar_cliente("ju")
+    print("---- Comienzo de la busqueda ----")
+    for cliente in resultados:
+        print(cliente)
+    print("---- Fin de la busqueda ----")
+    # Generar resumen
+    print(banco.generar_resumen(cliente1))
+
+    # Mostrar información del banco
+    print(banco)

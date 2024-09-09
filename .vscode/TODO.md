@@ -1,6 +1,6 @@
 ## TO-DO
 # 1- Busqueda de cliente:
-    Que sea buscando la aparicion del str, cualquier aparicion
+    *Que sea buscando la aparicion del str, cualquier aparicion
 # 2- Login
     Debe mostrarce en resumen el login.
 # Exepcione
